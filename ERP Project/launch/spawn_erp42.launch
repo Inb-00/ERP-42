@@ -1,0 +1,29 @@
+<launch>
+  <!-- 1. Gazebo 맵 실행 -->
+  <arg name="world_file" default="/home/inb/catkin_ws/src/citysim/worlds/simple_city.world"/>
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(arg world_file)" />
+  </include>
+
+  <!-- 2. ERP42 로봇 모델 로딩 -->
+  <param name="robot_description"
+         command="$(find xacro)/xacro '$(find erp42)/urdf/erp42.urdf.xacro'" />
+
+  <!-- 3. 모델 스폰 -->
+  <node name="spawn_erp42" pkg="gazebo_ros" type="spawn_model"
+        args="-urdf -param robot_description -model erp42 -x 0 -y 0 -z 1.0"
+        output="screen" />
+
+  <!-- 4. 컨트롤러 설정 로딩 -->
+  <rosparam command="load" file="$(find erp42)/config/controllers.yaml" />
+
+  <!-- 5. 컨트롤러 스포너 (앞바퀴 구동 제거) -->
+  <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
+        output="screen" ns="/erp42_control"
+        args="joint_state_controller
+              left_back_wheel_velocity_controller
+              right_back_wheel_velocity_controller
+              left_steer_wheel_controller
+              right_steer_wheel_controller
+              --shutdown-timeout 3"/>
+</launch>
